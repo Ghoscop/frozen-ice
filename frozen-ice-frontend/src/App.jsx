@@ -1,30 +1,41 @@
+
 import { useState } from "react";
+
 import Sidebar from "./components/Sidebar";
-import Usuarios from "./pages/Usuarios";
 import Header from "./components/Header";
-import Vendas from "./pages/Vendas";
-import Clientes from "./pages/Clientes";
-import HistoricoVendas from "./pages/HistoricoVendas";
+
+import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Produtos from "./pages/Produtos";
+import Vendas from "./pages/Vendas";
+import Clientes from "./pages/Clientes";
+import Usuarios from "./pages/Usuarios";
+import HistoricoVendas from "./pages/HistoricoVendas";
 
 export default function App() {
   const [activePage, setActivePage] = useState("Dashboard");
+  const [usuarioLogado, setUsuarioLogado] = useState(null);
 
   function renderPage() {
     switch (activePage) {
       case "Dashboard":
         return <Dashboard />;
+
       case "Produtos":
         return <Produtos />;
+
       case "Vendas":
         return <Vendas />;
-      case "Relatórios":
-        return <HistoricoVendas />;
+
       case "Clientes":
         return <Clientes />;
+
       case "Usuários":
         return <Usuarios />;
+
+      case "Relatórios":
+        return <HistoricoVendas />;
+
       default:
         return (
           <div className="page-placeholder">
@@ -33,6 +44,10 @@ export default function App() {
           </div>
         );
     }
+  }
+
+  if (!usuarioLogado) {
+    return <Login onLogin={setUsuarioLogado} />;
   }
 
   return (
