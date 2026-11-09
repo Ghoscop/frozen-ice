@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { salvarVenda } from "../services/vendasService";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ShoppingCart,
@@ -24,6 +25,7 @@ const produtos = [
 
 export default function Vendas() {
   const [carrinho, setCarrinho] = useState([]);
+  const [ultimaVenda, setUltimaVenda] = useState(null);
   const [categoria, setCategoria] = useState("Todas");
   const [pagamento, setPagamento] = useState("Pix");
   const [finalizada, setFinalizada] = useState(false);
@@ -81,12 +83,32 @@ export default function Vendas() {
       currency: "BRL"
     });
 
-  const finalizarVenda = () => {
-    if (carrinho.length === 0) return;
+ const finalizarVenda = () => {
+  if (carrinho.length === 0) return;
 
-    setFinalizada(true);
-    setCarrinho([]);
+  const novaVenda = {
+    id: Date.now(),
+    cliente: "Cliente balcão",
+    data: new Date().toLocaleDateString("en-CA"),
+    hora: new Date().toLocaleTimeString("pt-BR", {
+      hour: "2-digit",
+      minute: "2-digit"
+    }),
+    pagamento,
+    status: "Concluída",
+    itens: carrinho.map(item => ({
+      nome: item.nome,
+      quantidade: item.quantidade,
+      preco: item.preco
+    }))
   };
+
+  salvarVenda(novaVenda);
+
+  setUltimaVenda(novaVenda);
+  setFinalizada(true);
+  setCarrinho([]);
+};
 
   return (
     <motion.div
