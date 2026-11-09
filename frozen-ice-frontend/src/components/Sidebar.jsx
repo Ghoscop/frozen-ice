@@ -1,3 +1,4 @@
+
 import { motion } from "framer-motion";
 import {
   LayoutDashboard,
@@ -20,7 +21,11 @@ const menuItems = [
   { name: "Configurações", icon: Settings }
 ];
 
-export default function Sidebar({ activePage, setActivePage }) {
+export default function Sidebar({
+  activePage,
+  setActivePage,
+  onLogout
+}) {
   return (
     <aside className="sidebar">
       <div className="brand">
@@ -70,7 +75,15 @@ export default function Sidebar({ activePage, setActivePage }) {
           <small>Gerente da loja</small>
         </div>
 
-        <LogOut size={19} className="logout-icon" />
+        <button
+          type="button"
+          className="sidebar-logout-button"
+          onClick={onLogout}
+          title="Sair do sistema"
+          aria-label="Sair do sistema"
+        >
+          <LogOut size={19} />
+        </button>
       </div>
     </aside>
   );

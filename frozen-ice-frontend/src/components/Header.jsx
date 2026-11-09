@@ -1,7 +1,8 @@
-import { Bell, Search, ChevronDown } from "lucide-react";
+
+import { Bell, Search, ChevronDown, LogOut } from "lucide-react";
 import { motion } from "framer-motion";
 
-export default function Header() {
+export default function Header({ onLogout }) {
   return (
     <header className="top-header">
       <div className="search-box">

@@ -3,7 +3,6 @@ import { useState } from "react";
 
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
-
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Produtos from "./pages/Produtos";
@@ -55,10 +54,11 @@ export default function App() {
       <Sidebar
         activePage={activePage}
         setActivePage={setActivePage}
+        onLogout={() => setUsuarioLogado(null)}
       />
 
       <main className="main-content">
-        <Header />
+        <Header onLogout={() => setUsuarioLogado(null)} />
         {renderPage()}
       </main>
     </div>

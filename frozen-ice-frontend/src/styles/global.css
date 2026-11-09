@@ -154,14 +154,47 @@ button {
 
 .user-avatar,
 .profile-avatar {
-  width: 39px;
-  height: 39px;
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  min-height: 42px;
+  flex: 0 0 42px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
   border-radius: 50%;
-  background: linear-gradient(135deg, #ff8fc9, #9160e8);
-  display: grid;
-  place-items: center;
+  background: linear-gradient(135deg, #f28bd7, #a56be8);
+  color: #ffffff;
+
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1;
+
+  box-sizing: border-box;
+}
+
+r {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  flex: 0 0 40px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f28bd7, #a56be8);
   color: white;
-  font-weight: 900;
+
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1;
+
+  box-sizing: border-box;
 }
 
 .sidebar-user strong,
@@ -178,10 +211,6 @@ button {
   font-size: 10px;
 }
 
-.logout-icon {
-  margin-left: auto;
-  color: #cbbde3;
-}
 
 /* CONTEÚDO PRINCIPAL */
 
@@ -745,10 +774,13 @@ button {
   .menu-label,
   .menu-item span,
   .sidebar-promo,
-  .sidebar-user > div:not(.user-avatar),
-  .logout-icon {
-    display: none;
-  }
+.sidebar-user > div:not(.user-avatar) {
+  display: none;
+}
+
+.sidebar-user .logout-icon {
+  display: flex;
+}
 
   .brand {
     padding-bottom: 35px;
@@ -3333,3 +3365,195 @@ button {
   }
 }
 
+
+.logout-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 15px;
+  border: 1px solid #f0d9e8;
+  border-radius: 12px;
+  background: #fff0f5;
+  color: #bd477d;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.logout-button:hover {
+  background: #bd477d;
+  color: white;
+  box-shadow: 0 5px 15px rgba(189, 71, 125, 0.2);
+}
+
+
+.sidebar-user {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  margin-top: auto;
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.sidebar-user-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 4px;
+}
+
+.sidebar-user:hover {
+  background: rgba(255, 255, 255, 0.10);
+  border-radius: 12px;
+}
+
+.logout-icon {
+  margin-left: auto;
+  color: #cbbde3;
+  background: transparent;
+  border: none;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: 0.2s ease;
+}
+
+.logout-icon:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.sidebar-user:hover .logout-icon {
+  transform: translateX(3px);
+}
+
+
+/* Botão sair do rodapé da sidebar */
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sidebar-user > div:nth-child(2) {
+  flex: 1;
+}
+
+.sidebar-user .logout-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  margin-left: auto;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #ffffff;
+  cursor: pointer;
+  transition: background 0.2s ease, opacity 0.2s ease;
+}
+
+.sidebar-user .logout-icon:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+
+/* Rodapé original da Sidebar */
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sidebar-user-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Ícone de sair */
+.sidebar-logout {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin-left: auto;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #ffffff;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.sidebar-logout:hover {
+  background: rgba(255, 255, 255, 0.12);
+  transform: translateX(2px);
+}
+
+
+/* Botão de sair do rodapé */
+.sidebar-logout-button {
+  appearance: none;
+  -webkit-appearance: none;
+  margin-left: auto;
+  padding: 6px;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: #cbbde3;
+
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.sidebar-logout-button:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.sidebar-logout-button svg {
+  width: 19px;
+  height: 19px;
+  display: block;
+  stroke: currentColor;
+}
+
+/* Sidebar compacta: mantém o botão visível */
+@media (max-width: 850px) {
+  .sidebar-user > div:not(.user-avatar) {
+    display: none;
+  }
+
+  .sidebar-logout-button {
+    display: flex;
+  }
+}
