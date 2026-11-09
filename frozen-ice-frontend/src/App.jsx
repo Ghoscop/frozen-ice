@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
+import Vendas from "./pages/Vendas";
 import Dashboard from "./pages/Dashboard";
 import Produtos from "./pages/Produtos";
 
@@ -13,6 +14,8 @@ export default function App() {
         return <Dashboard />;
       case "Produtos":
         return <Produtos />;
+      case "Vendas":
+        return <Vendas />;
       default:
         return (
           <div className="page-placeholder">
