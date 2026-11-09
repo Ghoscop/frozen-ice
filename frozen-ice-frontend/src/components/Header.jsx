@@ -2,7 +2,7 @@
 import { Bell, Search, ChevronDown, LogOut } from "lucide-react";
 import { motion } from "framer-motion";
 
-export default function Header({ onLogout }) {
+export default function Header({ onLogout, usuario }) {
   return (
     <header className="top-header">
       <div className="search-box">
@@ -25,16 +25,23 @@ export default function Header({ onLogout }) {
         </motion.button>
 
         <div className="header-profile">
-          <div className="profile-avatar">A</div>
-
-          <div className="profile-info">
-            <strong>Administrador</strong>
-            <small>Bem-vindo!</small>
-          </div>
-
-          <ChevronDown size={17} />
+        <div className="profile-avatar">
+          {(usuario?.nome || usuario?.name || usuario?.email || "U")
+            .charAt(0)
+            .toUpperCase()}
         </div>
+
+        <div className="profile-info">
+          <strong>
+            {usuario?.nome || usuario?.name || usuario?.email || "Usuário"}
+          </strong>
+
+          <small>Bem-vindo!</small>
+        </div>
+
+        <ChevronDown size={17} />
       </div>
-    </header>
+    </div>
+  </header>
   );
 }

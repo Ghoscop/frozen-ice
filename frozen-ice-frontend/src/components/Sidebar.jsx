@@ -24,7 +24,8 @@ const menuItems = [
 export default function Sidebar({
   activePage,
   setActivePage,
-  onLogout
+  onLogout,
+  usuario
 }) {
   return (
     <aside className="sidebar">
@@ -68,11 +69,18 @@ export default function Sidebar({
       </div>
 
       <div className="sidebar-user">
-        <div className="user-avatar">A</div>
-
-        <div>
-          <strong>Administrador</strong>
-          <small>Gerente da loja</small>
+        <div className="user-avatar">
+        {(usuario?.nome || usuario?.name || usuario?.email || "U")
+          .charAt(0)
+          .toUpperCase()}
+        </div>
+      <div>
+          <strong>
+          {usuario?.nome || usuario?.name || usuario?.email || "Usuário"}
+          </strong>
+          <small>
+          {usuario?.perfil || usuario?.role || "Funcionário"}
+          </small>
         </div>
 
         <button

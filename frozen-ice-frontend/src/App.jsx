@@ -1,8 +1,8 @@
-
 import { useState } from "react";
 
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
+
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Produtos from "./pages/Produtos";
@@ -14,6 +14,11 @@ import HistoricoVendas from "./pages/HistoricoVendas";
 export default function App() {
   const [activePage, setActivePage] = useState("Dashboard");
   const [usuarioLogado, setUsuarioLogado] = useState(null);
+
+  function handleLogout() {
+    setUsuarioLogado(null);
+    setActivePage("Dashboard");
+  }
 
   function renderPage() {
     switch (activePage) {
@@ -54,11 +59,16 @@ export default function App() {
       <Sidebar
         activePage={activePage}
         setActivePage={setActivePage}
-        onLogout={() => setUsuarioLogado(null)}
+        usuario={usuarioLogado}
+        onLogout={handleLogout}
       />
 
       <main className="main-content">
-        <Header onLogout={() => setUsuarioLogado(null)} />
+        <Header
+          usuario={usuarioLogado}
+          onLogout={handleLogout}
+        />
+
         {renderPage()}
       </main>
     </div>

@@ -152,8 +152,7 @@ button {
   gap: 10px;
 }
 
-.user-avatar,
-.profile-avatar {
+.user-avatar {
   width: 42px;
   height: 42px;
   min-width: 42px;
@@ -175,7 +174,7 @@ button {
   box-sizing: border-box;
 }
 
-r {
+.profile-avatar {
   width: 40px;
   height: 40px;
   min-width: 40px;
