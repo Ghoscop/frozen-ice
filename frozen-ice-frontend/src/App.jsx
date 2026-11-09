@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Sidebar from "./components/Sidebar";
+import Usuarios from "./pages/Usuarios";
 import Header from "./components/Header";
 import Vendas from "./pages/Vendas";
 import Clientes from "./pages/Clientes";
@@ -8,7 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import Produtos from "./pages/Produtos";
 
 export default function App() {
-  const [activePage, setActivePage] = useState("Clientes");
+  const [activePage, setActivePage] = useState("Dashboard");
 
   function renderPage() {
     switch (activePage) {
@@ -22,6 +23,8 @@ export default function App() {
         return <HistoricoVendas />;
       case "Clientes":
         return <Clientes />;
+      case "Usuários":
+        return <Usuarios />;
       default:
         return (
           <div className="page-placeholder">

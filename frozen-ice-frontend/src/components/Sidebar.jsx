@@ -14,6 +14,7 @@ const menuItems = [
   { name: "Dashboard", icon: LayoutDashboard },
   { name: "Produtos", icon: IceCream },
   { name: "Vendas", icon: ShoppingCart },
+  { name: "Clientes", icon: Users },
   { name: "Usuários", icon: Users },
   { name: "Relatórios", icon: ChartNoAxesCombined },
   { name: "Configurações", icon: Settings }
