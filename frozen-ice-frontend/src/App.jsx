@@ -4,6 +4,7 @@ import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
 
 import Login from "./pages/Login";
+import Notificacoes from "./pages/Notificacoes";
 import Dashboard from "./pages/Dashboard";
 import Produtos from "./pages/Produtos";
 import Vendas from "./pages/Vendas";
@@ -40,6 +41,9 @@ export default function App() {
       case "Relatórios":
         return <HistoricoVendas />;
 
+      case "Notificações":
+        return <Notificacoes />;
+
       default:
         return (
           <div className="page-placeholder">
@@ -67,6 +71,7 @@ export default function App() {
         <Header
           usuario={usuarioLogado}
           onLogout={handleLogout}
+          onOpenNotifications={() => setActivePage("Notificações")}
         />
 
         {renderPage()}

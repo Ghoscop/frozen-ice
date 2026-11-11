@@ -2,7 +2,7 @@
 import { Bell, Search, ChevronDown, LogOut } from "lucide-react";
 import { motion } from "framer-motion";
 
-export default function Header({ onLogout, usuario }) {
+export default function Header({ onLogout, usuario, onOpenNotifications }) {
   return (
     <header className="top-header">
       <div className="search-box">
@@ -19,6 +19,7 @@ export default function Header({ onLogout, usuario }) {
           whileHover={{ scale: 1.1 }}
           className="notification-button"
           aria-label="Notificações"
+          onClick={onOpenNotifications}
         >
           <Bell size={21} />
           <span className="notification-dot"></span>
