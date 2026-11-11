@@ -69,10 +69,14 @@ export default function Sidebar({
       </div>
 
       <div className="sidebar-user">
-        <div className="user-avatar">
-        {(usuario?.nome || usuario?.name || usuario?.email || "U")
-          .charAt(0)
-          .toUpperCase()}
+      <div className="user-avatar">
+      {usuario?.avatar ? (
+        <img src={usuario.avatar} alt="Foto do usuário" />
+          ) : (
+            (usuario?.nome || usuario?.name || usuario?.email || "U")
+              .charAt(0)
+              .toUpperCase()
+          )}
         </div>
       <div>
           <strong>

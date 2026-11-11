@@ -7,6 +7,7 @@ import Login from "./pages/Login";
 import Notificacoes from "./pages/Notificacoes";
 import Dashboard from "./pages/Dashboard";
 import Produtos from "./pages/Produtos";
+import Configuracoes from "./pages/Configuracoes";
 import Vendas from "./pages/Vendas";
 import Clientes from "./pages/Clientes";
 import Usuarios from "./pages/Usuarios";
@@ -20,6 +21,26 @@ export default function App() {
     setUsuarioLogado(null);
     setActivePage("Dashboard");
   }
+
+  function handleLogin(usuario) {
+  try {
+    const perfilSalvo = JSON.parse(
+      localStorage.getItem("frozen_ice_perfil")
+    );
+
+    if (perfilSalvo?.email === usuario.email) {
+      setUsuarioLogado({
+        ...usuario,
+        ...perfilSalvo
+      });
+      return;
+    }
+  } catch {
+    // Continua com os dados do login.
+  }
+
+  setUsuarioLogado(usuario);
+}
 
   function renderPage() {
     switch (activePage) {
@@ -44,6 +65,14 @@ export default function App() {
       case "Notificações":
         return <Notificacoes />;
 
+      case "Configurações":
+  return (
+    <Configuracoes
+      usuario={usuarioLogado}
+      onAtualizarUsuario={setUsuarioLogado}
+    />
+  );
+
       default:
         return (
           <div className="page-placeholder">
@@ -55,7 +84,7 @@ export default function App() {
   }
 
   if (!usuarioLogado) {
-    return <Login onLogin={setUsuarioLogado} />;
+    return <Login onLogin={handleLogin} />;
   }
 
   return (

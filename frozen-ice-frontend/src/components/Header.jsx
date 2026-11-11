@@ -27,9 +27,13 @@ export default function Header({ onLogout, usuario, onOpenNotifications }) {
 
         <div className="header-profile">
         <div className="profile-avatar">
-          {(usuario?.nome || usuario?.name || usuario?.email || "U")
-            .charAt(0)
-            .toUpperCase()}
+          {usuario?.avatar ? (
+            <img src={usuario.avatar} alt="Foto do usuário" />
+          ) : (
+            (usuario?.nome || usuario?.name || usuario?.email || "U")
+              .charAt(0)
+              .toUpperCase()
+          )}
         </div>
 
         <div className="profile-info">
