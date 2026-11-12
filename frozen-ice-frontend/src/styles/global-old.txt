@@ -1,0 +1,96 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap');
+
+:root {
+  font-family: 'Nunito', sans-serif;
+  color: #30264b;
+  background: #faf8ff;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  font-smooth: always;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  background: #faf8ff;
+}
+
+button, input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.app-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 255px;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #35215f, #21153f);
+  color: white;
+  padding: 28px 18px 20px;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.brand {
+  text-align: center;
+  padding-bottom: 42px;
+}
+
+.brand-icon {
+  position: relative;
+  display: inline-flex;
+  color: #ff91cb;
+  margin-bottom: 8px;
+}
+
+.brand-snow {
+  position: absolute;
+  right: -12px;
+  top: -5px;
+  color: #a7dfff;
+}
+
+.brand h1 {
+  font-size: 23px;
+  font-weight: 900;
+  letter-spacing: -1px;
+}
+
+.brand h1 span {
+  color: #bca1ff;
+}
+
+.brand p {
+  font-size: 12px;
+  color: #d1c3ed;
+  margin-top: 3px;
+}
+
+.menu-label {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: #a99ac8;
+  font-weight: 800;
+  padding: 0 12px;
+  margin-bottom: 14px;
+}
+
+.sidebar-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
