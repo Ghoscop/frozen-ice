@@ -4214,3 +4214,9 @@ button {
   object-fit: cover;
   border-radius: 50%;
 }
+
+.login-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}

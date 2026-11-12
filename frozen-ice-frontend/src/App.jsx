@@ -2,7 +2,7 @@ import { useState } from "react";
 
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
-
+import { fazerLogout } from "./services/authService";
 import Login from "./pages/Login";
 import Notificacoes from "./pages/Notificacoes";
 import Dashboard from "./pages/Dashboard";
@@ -18,29 +18,14 @@ export default function App() {
   const [usuarioLogado, setUsuarioLogado] = useState(null);
 
   function handleLogout() {
+    fazerLogout();
     setUsuarioLogado(null);
     setActivePage("Dashboard");
   }
 
   function handleLogin(usuario) {
-  try {
-    const perfilSalvo = JSON.parse(
-      localStorage.getItem("frozen_ice_perfil")
-    );
-
-    if (perfilSalvo?.email === usuario.email) {
-      setUsuarioLogado({
-        ...usuario,
-        ...perfilSalvo
-      });
-      return;
-    }
-  } catch {
-    // Continua com os dados do login.
+    setUsuarioLogado(usuario);
   }
-
-  setUsuarioLogado(usuario);
-}
 
   function renderPage() {
     switch (activePage) {

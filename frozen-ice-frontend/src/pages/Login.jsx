@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { fazerLogin } from "../services/authService";
 import {
   IceCreamCone,
   Mail,
@@ -13,41 +14,46 @@ import {
 
 export default function Login({ onLogin }) {
   const [email, setEmail] = useState("");
+  const [carregando, setCarregando] = useState(false);
   const [senha, setSenha] = useState("");
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [erro, setErro] = useState("");
 
-  function entrar(event) {
-    event.preventDefault();
-    setErro("");
+  
+async function entrar(event) {
+  event.preventDefault();
+  setErro("");
 
-    // Acesso demonstrativo. Depois será substituído pela API.
-    if (
-      email.trim().toLowerCase() === "admin@frozenice.com" &&
-      senha === "admin123"
-    ) {
-      onLogin({
-        nome: "Administrador",
-        email: "admin@frozenice.com",
-        perfil: "Administrador",
-      });
-      return;
-    }
+  const emailNormalizado = email.trim().toLowerCase();
 
-    if (
-      email.trim().toLowerCase() === "ana@frozenice.com" &&
-      senha === "ana12345"
-    ) {
-      onLogin({
-        nome: "Ana Souza",
-        email: "ana@frozenice.com",
-        perfil: "Atendente",
-      });
-      return;
-    }
-
-    setErro("E-mail ou senha incorretos. Tente novamente.");
+  if (!emailNormalizado || !senha) {
+    setErro("Informe seu e-mail e sua senha.");
+    return;
   }
+
+  try {
+    setCarregando(true);
+
+    const usuario = await fazerLogin(emailNormalizado, senha);
+
+    onLogin(usuario);
+  } catch (error) {
+    if (error.response?.status === 401) {
+      setErro("E-mail ou senha incorretos.");
+    } else if (error.response?.status === 403) {
+      setErro("Seu usuário não tem permissão para acessar o sistema.");
+    } else if (!error.response) {
+      setErro("Não foi possível conectar ao servidor. Verifique se a API está ligada.");
+    } else {
+      setErro(
+        error.response?.data?.message ||
+        "Não foi possível realizar o login. Tente novamente."
+      );
+    }
+  } finally {
+    setCarregando(false);
+  }
+}
 
   return (
     <main className="login-page">
@@ -136,10 +142,14 @@ export default function Login({ onLogin }) {
             </motion.div>
           )}
 
-          <button type="submit" className="login-submit">
-            Entrar no sistema
-            <ArrowRight size={18} />
-          </button>
+            <button
+              type="submit"
+              className="login-submit"
+              disabled={carregando}
+            >
+              {carregando ? "Entrando..." : "Entrar no sistema"}
+              {!carregando && <ArrowRight size={18} />}
+            </button>
         </form>
 
         <div className="login-demo">
