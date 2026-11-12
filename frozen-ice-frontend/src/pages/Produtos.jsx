@@ -1,432 +1,214 @@
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
-  Plus, Search, Pencil, Trash2, IceCream,
-  X, Package, AlertTriangle
+  Search, Plus, Pencil, Trash2, IceCream, Package, AlertTriangle,
+  X, RefreshCw
 } from "lucide-react";
+import {
+  listarProdutos, cadastrarProduto, atualizarProduto,
+  excluirProduto as excluirProdutoAPI
+} from "../services/produtosService";
 
-const initialProducts = [
-  {
-    id: 1,
-    nome: "Chocolate Belga",
-    sabor: "Chocolate",
-    categoria: "Tradicional",
-    preco: 12.90,
-    estoque: 35,
-    emoji: "🍫",
-    cor: "chocolate"
-  },
-  {
-    id: 2,
-    nome: "Morango Cremoso",
-    sabor: "Morango",
-    categoria: "Frutas",
-    preco: 11.90,
-    estoque: 28,
-    emoji: "🍓",
-    cor: "strawberry"
-  },
-  {
-    id: 3,
-    nome: "Cookies & Cream",
-    sabor: "Baunilha",
-    categoria: "Especial",
-    preco: 14.90,
-    estoque: 4,
-    emoji: "🍪",
-    cor: "cookies"
-  },
-  {
-    id: 4,
-    nome: "Pistache Premium",
-    sabor: "Pistache",
-    categoria: "Especial",
-    preco: 15.90,
-    estoque: 18,
-    emoji: "🍵",
-    cor: "pistachio"
-  },
-  {
-    id: 5,
-    nome: "Açaí Tropical",
-    sabor: "Açaí",
-    categoria: "Frutas",
-    preco: 13.90,
-    estoque: 0,
-    emoji: "🫐",
-    cor: "acai"
-  },
-  {
-    id: 6,
-    nome: "Doce de Leite",
-    sabor: "Doce de leite",
-    categoria: "Tradicional",
-    preco: 12.50,
-    estoque: 22,
-    emoji: "🍮",
-    cor: "caramel"
-  }
-];
-
-const emptyForm = {
-  nome: "",
-  sabor: "",
-  categoria: "Tradicional",
-  preco: "",
-  estoque: "",
-  emoji: "🍦",
-  cor: "chocolate"
-};
+const vazio = { nome: "", sabor: "", preco: "", categoriaId: "", estoque: "0" };
+const moeda = (valor) => Number(valor || 0).toLocaleString("pt-BR", {
+  style: "currency", currency: "BRL"
+});
+const erroTexto = (e) => e?.response?.data?.message ||
+  e?.response?.data?.erro || e?.message || "Não foi possível concluir a operação.";
 
 export default function Produtos() {
-  const [products, setProducts] = useState(initialProducts);
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("Todas");
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [form, setForm] = useState(emptyForm);
+  const [produtos, setProdutos] = useState([]);
+  const [busca, setBusca] = useState("");
+  const [categoriaFiltro, setCategoriaFiltro] = useState("Todas");
+  const [modalAberto, setModalAberto] = useState(false);
+  const [editando, setEditando] = useState(null);
+  const [form, setForm] = useState(vazio);
+  const [carregando, setCarregando] = useState(true);
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState("");
+  const [sucesso, setSucesso] = useState("");
 
-  const filteredProducts = products.filter((product) => {
-    const matchesSearch =
-      product.nome.toLowerCase().includes(search.toLowerCase()) ||
-      product.sabor.toLowerCase().includes(search.toLowerCase());
-
-    const matchesCategory =
-      category === "Todas" || product.categoria === category;
-
-    return matchesSearch && matchesCategory;
-  });
-
-  const totalStock = products.reduce(
-    (total, product) => total + Number(product.estoque), 0
-  );
-
-  const lowStock = products.filter(
-    (product) => product.estoque > 0 && product.estoque <= 5
-  ).length;
-
-  function openNewProduct() {
-    setEditingId(null);
-    setForm(emptyForm);
-    setModalOpen(true);
+  async function carregarProdutos() {
+    setCarregando(true);
+    setErro("");
+    try {
+      setProdutos(await listarProdutos());
+    } catch (e) {
+      setErro(erroTexto(e));
+    } finally {
+      setCarregando(false);
+    }
   }
 
-  function openEditProduct(product) {
-    setEditingId(product.id);
-    setForm({
-      nome: product.nome,
-      sabor: product.sabor,
-      categoria: product.categoria,
-      preco: String(product.preco),
-      estoque: String(product.estoque),
-      emoji: product.emoji,
-      cor: product.cor
+  useEffect(() => { carregarProdutos(); }, []);
+
+  const categorias = useMemo(() => {
+    const valores = produtos.map(p => p.categoria?.nome ?? p.categoriaNome ?? p.categoria)
+      .filter(v => typeof v === "string" && v.trim());
+    return ["Todas", ...new Set(valores)];
+  }, [produtos]);
+
+  const filtrados = useMemo(() => {
+    const termo = busca.toLocaleLowerCase("pt-BR").trim();
+    return produtos.filter(p => {
+      const categoria = p.categoria?.nome ?? p.categoriaNome ?? p.categoria ?? "";
+      const texto = [p.nome, p.sabor, categoria].some(v =>
+        String(v ?? "").toLocaleLowerCase("pt-BR").includes(termo));
+      return texto && (categoriaFiltro === "Todas" || categoria === categoriaFiltro);
     });
-    setModalOpen(true);
+  }, [produtos, busca, categoriaFiltro]);
+
+  const totalEstoque = produtos.reduce((s, p) => s + Number(p.estoque ?? p.quantidadeEstoque ?? 0), 0);
+  const baixoEstoque = produtos.filter(p => Number(p.estoque ?? p.quantidadeEstoque ?? 0) <= 5).length;
+
+  function abrirNovo() {
+    setEditando(null); setForm(vazio); setErro(""); setSucesso(""); setModalAberto(true);
+  }
+  function abrirEdicao(p) {
+    setEditando(p);
+    setForm({
+      nome: p.nome ?? "",
+      sabor: p.sabor ?? "",
+      preco: String(p.preco ?? p.preço ?? ""),
+      categoriaId: String(p.categoria?.id ?? p.categoriaId ?? ""),
+      estoque: String(p.estoque ?? p.quantidadeEstoque ?? 0),
+    });
+    setErro(""); setSucesso(""); setModalAberto(true);
+  }
+  function mudarCampo(e) {
+    const { name, value } = e.target;
+    setForm(atual => ({ ...atual, [name]: value }));
   }
 
-  function saveProduct(event) {
-    event.preventDefault();
-
-    const productData = {
-      ...form,
-      preco: Number(form.preco),
-      estoque: Number(form.estoque)
-    };
-
-    if (editingId !== null) {
-      setProducts((current) =>
-        current.map((product) =>
-          product.id === editingId
-            ? { ...product, ...productData }
-            : product
-        )
-      );
-    } else {
-      setProducts((current) => [
-        ...current,
-        {
-          id: Date.now(),
-          ...productData
-        }
-      ]);
+  async function salvar(e) {
+    e.preventDefault(); setErro(""); setSucesso("");
+    if (!Number.isFinite(Number(form.preco)) || Number(form.preco) <= 0) {
+      setErro("Informe um preço válido maior que zero."); return;
     }
-
-    setModalOpen(false);
-    setForm(emptyForm);
-    setEditingId(null);
+    if (!Number.isInteger(Number(form.estoque)) || Number(form.estoque) < 0) {
+      setErro("O estoque deve ser um número inteiro igual ou maior que zero."); return;
+    }
+    setSalvando(true);
+    try {
+      if (editando) await atualizarProduto(editando.id, form);
+      else await cadastrarProduto(form);
+      setModalAberto(false); setForm(vazio); setEditando(null);
+      setSucesso(editando ? "Produto atualizado com sucesso." : "Produto cadastrado com sucesso.");
+      await carregarProdutos();
+    } catch (e) {
+      setErro(erroTexto(e));
+    } finally { setSalvando(false); }
   }
 
-  function deleteProduct(id) {
-    const confirmed = window.confirm(
-      "Tem certeza que deseja excluir este produto?"
-    );
-
-    if (confirmed) {
-      setProducts((current) =>
-        current.filter((product) => product.id !== id)
-      );
-    }
+  async function excluir(id) {
+    const p = produtos.find(item => String(item.id) === String(id));
+    if (!window.confirm(`Deseja realmente excluir "${p?.nome ?? "este produto"}"?`)) return;
+    setErro(""); setSucesso("");
+    try {
+      await excluirProdutoAPI(id);
+      setProdutos(atual => atual.filter(item => String(item.id) !== String(id)));
+      setSucesso("Produto excluído com sucesso.");
+    } catch (e) { setErro(erroTexto(e)); }
   }
 
   return (
-    <motion.div
-      className="products-page"
-      initial={{ opacity: 0, y: 15 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-    >
-      <div className="products-title">
+    <main className="products-page">
+      <motion.div className="products-title" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}>
         <div>
-          <span className="welcome-tag">GESTÃO DA SORVETERIA 🍦</span>
-          <h2>Nosso catálogo</h2>
-          <p>Gerencie os sabores e produtos do FROZEN-ICE.</p>
+          <span className="clients-eyebrow">CATÁLOGO FROZEN-ICE</span>
+          <h2>Produtos 🍨</h2>
+          <p>Gerencie sabores, preços e estoque da sorveteria.</p>
         </div>
+        <button className="add-product-btn" onClick={abrirNovo}><Plus size={18} /> Novo produto</button>
+      </motion.div>
 
-        <button className="add-product-btn" onClick={openNewProduct}>
-          <Plus size={19} />
-          Novo produto
-        </button>
-      </div>
+      {(erro || sucesso) && <div role="alert" style={{
+        padding: 12, borderRadius: 10, marginBottom: 16,
+        color: erro ? "#a33b59" : "#397a5b", background: erro ? "#fff0f3" : "#effaf3"
+      }}>{erro || sucesso}</div>}
 
-      <div className="product-summary">
-        <div className="summary-card">
-          <div className="summary-icon purple"><IceCream /></div>
-          <div>
-            <small>Total de produtos</small>
-            <h3>{products.length}</h3>
-          </div>
-        </div>
+      <section className="product-summary">
+        <div className="summary-card"><div className="summary-icon purple"><IceCream size={22}/></div>
+          <div><small>Produtos cadastrados</small><h3>{produtos.length}</h3></div></div>
+        <div className="summary-card"><div className="summary-icon blue"><Package size={22}/></div>
+          <div><small>Unidades em estoque</small><h3>{totalEstoque}</h3></div></div>
+        <div className="summary-card"><div className="summary-icon orange"><AlertTriangle size={22}/></div>
+          <div><small>Estoque baixo (até 5)</small><h3>{baixoEstoque}</h3></div></div>
+      </section>
 
-        <div className="summary-card">
-          <div className="summary-icon blue"><Package /></div>
-          <div>
-            <small>Unidades em estoque</small>
-            <h3>{totalStock}</h3>
-          </div>
-        </div>
-
-        <div className="summary-card">
-          <div className="summary-icon orange"><AlertTriangle /></div>
-          <div>
-            <small>Estoque baixo</small>
-            <h3>{lowStock}</h3>
-          </div>
-        </div>
-      </div>
-
-      <div className="catalog-toolbar">
-        <div className="catalog-search">
-          <Search size={19} />
-          <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Pesquisar sorvetes..."
-          />
-        </div>
-
-        <select
-          value={category}
-          onChange={(event) => setCategory(event.target.value)}
-        >
-          <option value="Todas">Todas as categorias</option>
-          <option value="Tradicional">Tradicional</option>
-          <option value="Frutas">Frutas</option>
-          <option value="Especial">Especial</option>
+      <section className="catalog-toolbar">
+        <div className="catalog-search"><Search size={18}/><input value={busca}
+          onChange={e => setBusca(e.target.value)} placeholder="Buscar produto ou sabor..."/></div>
+        <select value={categoriaFiltro} onChange={e => setCategoriaFiltro(e.target.value)}>
+          {categorias.map(c => <option key={c} value={c}>{c === "Todas" ? "Todas as categorias" : c}</option>)}
         </select>
-      </div>
+        <button type="button" onClick={carregarProdutos} title="Atualizar catálogo"
+          style={{ border: 0, background: "#f4effb", color: "#8050c0", borderRadius: 10, padding: "0 14px", cursor: "pointer" }}>
+          <RefreshCw size={17}/>
+        </button>
+      </section>
 
-      <div className="catalog-heading">
-        <h3>🍨 Sabores disponíveis</h3>
-        <span>{filteredProducts.length} produtos encontrados</span>
-      </div>
-
-      <div className="catalog-grid">
-        <AnimatePresence mode="popLayout">
-          {filteredProducts.map((product) => (
-            <motion.article
-              key={product.id}
-              className="catalog-card"
-              layout
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              whileHover={{ y: -7 }}
-            >
-              <div className={`catalog-image ${product.cor}`}>
-                <span className="catalog-emoji">{product.emoji}</span>
-                <span className="catalog-category">{product.categoria}</span>
-              </div>
-
-              <div className="catalog-info">
-                <small>SABOR {product.sabor.toUpperCase()}</small>
-                <h3>{product.nome}</h3>
-
-                <div className="catalog-price">
-                  R$ {product.preco.toFixed(2).replace(".", ",")}
-                </div>
-
-                <div className="stock-status">
-                  <span
-                    className={
-                      product.estoque === 0
-                        ? "stock-out"
-                        : product.estoque <= 5
-                        ? "stock-low"
-                        : "stock-ok"
-                    }
-                  >
-                    {product.estoque === 0
-                      ? "Indisponível"
-                      : product.estoque <= 5
-                      ? "Estoque baixo"
-                      : "Disponível"}
-                  </span>
-
-                  <span>{product.estoque} un.</span>
-                </div>
-
-                <div className="catalog-actions">
-                  <button
-                    className="edit-btn"
-                    onClick={() => openEditProduct(product)}
-                  >
-                    <Pencil size={15} /> Editar
-                  </button>
-
-                  <button
-                    className="delete-btn"
-                    onClick={() => deleteProduct(product.id)}
-                    aria-label={`Excluir ${product.nome}`}
-                  >
-                    <Trash2 size={17} />
-                  </button>
-                </div>
-              </div>
-            </motion.article>
-          ))}
-        </AnimatePresence>
-      </div>
-
-      {filteredProducts.length === 0 && (
-        <div className="empty-products">
-          <span>🍦</span>
-          <h3>Nenhum sabor encontrado!</h3>
-          <p>Tente mudar sua pesquisa ou categoria.</p>
-        </div>
-      )}
+      {carregando ? <p style={{ padding: 25, textAlign: "center" }}>Carregando produtos...</p> :
+        filtrados.length === 0 ? <div style={{ padding: 35, textAlign: "center", color: "#9586a6" }}>
+          {erro ? "Não foi possível carregar o catálogo." : "Nenhum produto encontrado."}
+        </div> : (
+          <section className="products-grid">
+            <AnimatePresence>
+              {filtrados.map(p => {
+                const estoque = Number(p.estoque ?? p.quantidadeEstoque ?? 0);
+                const categoria = p.categoria?.nome ?? p.categoriaNome ?? p.categoria ?? "Sem categoria";
+                return <motion.article className="product-card" key={p.id} layout
+                  initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                  <div className="product-image strawberry">
+                    <span>🍦</span>
+                    <span className="product-label">{categoria}</span>
+                  </div>
+                  <div style={{ padding: 16 }}>
+                    <h3 style={{ margin: "0 0 5px", color: "#49345f" }}>{p.nome}</h3>
+                    <p style={{ margin: "0 0 12px", color: "#9586a6", fontSize: 12 }}>{p.sabor || "Sabor não informado"}</p>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                      <strong style={{ color: "#8050c0", fontSize: 17 }}>{moeda(p.preco ?? p.preço)}</strong>
+                      <small style={{ color: estoque <= 5 ? "#d58a32" : "#718b78" }}>
+                        Estoque: {estoque}
+                      </small>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 14 }}>
+                      <button className="product-action-edit" title="Editar" onClick={() => abrirEdicao(p)}><Pencil size={16}/></button>
+                      <button className="product-action-delete" title="Excluir" onClick={() => excluir(p.id)}><Trash2 size={16}/></button>
+                    </div>
+                  </div>
+                </motion.article>;
+              })}
+            </AnimatePresence>
+          </section>
+        )}
 
       <AnimatePresence>
-        {modalOpen && (
-          <motion.div
-            className="modal-overlay"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onMouseDown={(event) => {
-              if (event.target === event.currentTarget) {
-                setModalOpen(false);
-              }
-            }}
-          >
-            <motion.div
-              className="product-modal"
-              initial={{ opacity: 0, y: 30, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20 }}
-            >
-              <div className="modal-heading">
-                <div>
-                  <span>🍦 FROZEN-ICE</span>
-                  <h2>{editingId ? "Editar produto" : "Novo produto"}</h2>
-                  <p>Preencha os dados do seu sorvete.</p>
-                </div>
-
-                <button
-                  type="button"
-                  className="modal-close"
-                  onClick={() => setModalOpen(false)}
-                >
-                  <X />
-                </button>
+        {modalAberto && <motion.div className="product-modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          onMouseDown={e => { if (e.target === e.currentTarget && !salvando) setModalAberto(false); }}>
+          <motion.div className="product-modal" initial={{ opacity: 0, y: 18, scale: .97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 12 }}>
+            <div className="product-modal-heading">
+              <div><span>FROZEN-ICE ✦</span><h2>{editando ? "Editar produto" : "Novo produto"}</h2>
+                <p>Preencha os dados do item do catálogo.</p></div>
+              <button type="button" onClick={() => setModalAberto(false)} disabled={salvando}><X size={19}/></button>
+            </div>
+            <form onSubmit={salvar}>
+              <div className="product-form-grid">
+                <label>Nome do produto<input name="nome" value={form.nome} onChange={mudarCampo} required maxLength={120} placeholder="Ex.: Sorvete de morango"/></label>
+                <label>Sabor<input name="sabor" value={form.sabor} onChange={mudarCampo} placeholder="Ex.: Morango cremoso"/></label>
+                <label>Preço (R$)<input name="preco" type="number" min="0.01" step="0.01" value={form.preco} onChange={mudarCampo} required/></label>
+                <label>ID da categoria<input name="categoriaId" type="number" min="1" value={form.categoriaId} onChange={mudarCampo} placeholder="ID informado pelo backend"/></label>
+                <label>Quantidade em estoque<input name="estoque" type="number" min="0" step="1" value={form.estoque} onChange={mudarCampo} required/></label>
               </div>
-
-              <form onSubmit={saveProduct}>
-                <label>Nome do produto</label>
-                <input
-                  required
-                  maxLength={80}
-                  placeholder="Ex.: Chocolate Belga"
-                  value={form.nome}
-                  onChange={(e) => setForm({ ...form, nome: e.target.value })}
-                />
-
-                <label>Sabor</label>
-                <input
-                  required
-                  placeholder="Ex.: Chocolate"
-                  value={form.sabor}
-                  onChange={(e) => setForm({ ...form, sabor: e.target.value })}
-                />
-
-                <label>Categoria</label>
-                <select
-                  value={form.categoria}
-                  onChange={(e) => setForm({ ...form, categoria: e.target.value })}
-                >
-                  <option>Tradicional</option>
-                  <option>Frutas</option>
-                  <option>Especial</option>
-                </select>
-
-                <div className="form-two-columns">
-                  <div>
-                    <label>Preço (R$)</label>
-                    <input
-                      required
-                      type="number"
-                      min="0.01"
-                      step="0.01"
-                      value={form.preco}
-                      onChange={(e) => setForm({ ...form, preco: e.target.value })}
-                    />
-                  </div>
-
-                  <div>
-                    <label>Estoque</label>
-                    <input
-                      required
-                      type="number"
-                      min="0"
-                      step="1"
-                      value={form.estoque}
-                      onChange={(e) => setForm({ ...form, estoque: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                <label>Emoji do produto</label>
-                <select
-                  value={form.emoji}
-                  onChange={(e) => setForm({ ...form, emoji: e.target.value })}
-                >
-                  <option value="🍦">🍦 Casquinha</option>
-                  <option value="🍨">🍨 Taça</option>
-                  <option value="🍫">🍫 Chocolate</option>
-                  <option value="🍓">🍓 Morango</option>
-                  <option value="🍪">🍪 Cookies</option>
-                  <option value="🍧">🍧 Raspadinha</option>
-                  <option value="🫐">🫐 Frutas</option>
-                </select>
-
-                <button className="save-product-btn" type="submit">
-                  {editingId ? "Salvar alterações" : "Cadastrar produto"}
-                </button>
-              </form>
-            </motion.div>
+              {erro && <p role="alert" style={{ color: "#b34d68", fontSize: 12 }}>{erro}</p>}
+              <div className="product-modal-actions">
+                <button type="button" onClick={() => setModalAberto(false)} disabled={salvando}>Cancelar</button>
+                <button className="save-product-btn" type="submit" disabled={salvando}>{salvando ? "Salvando..." : editando ? "Salvar alterações" : "Cadastrar produto"}</button>
+              </div>
+            </form>
           </motion.div>
-        )}
+        </motion.div>}
       </AnimatePresence>
-    </motion.div>
+    </main>
   );
 }
