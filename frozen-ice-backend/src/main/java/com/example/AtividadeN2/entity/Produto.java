@@ -1,6 +1,5 @@
 package com.example.AtividadeN2.entity;
 
-import com.example.AtividadeN2.dto.ProdutoRequestDTO;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,12 +16,11 @@ public class Produto {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
+
     private String nome;
     private BigDecimal preco;
     private String sabor;
 
-    @ManyToOne
-    @JoinColumn(name = "categoria_id")
+    @Column(name = "categoria_id")
     private UUID categoriaId;
-
 }
