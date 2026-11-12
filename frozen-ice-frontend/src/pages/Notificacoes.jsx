@@ -1,143 +1,127 @@
-
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Bell,
-  Package,
-  ShoppingBag,
-  Users,
-  Check,
-  CheckCheck,
-  Trash2,
-  Sparkles,
-  Filter
+  Bell, Package, ShoppingBag, Users, Check, CheckCheck,
+  Trash2, Sparkles, RefreshCw
 } from "lucide-react";
-
-const notificacoesIniciais = [
-  {
-    id: 1,
-    tipo: "estoque",
-    titulo: "Estoque baixo",
-    mensagem: "O produto Pistache Premium está com apenas 3 unidades.",
-    horario: "Há 10 minutos",
-    lida: false
-  },
-  {
-    id: 2,
-    tipo: "venda",
-    titulo: "Nova venda realizada!",
-    mensagem: "Uma venda foi finalizada com sucesso no caixa.",
-    horario: "Há 35 minutos",
-    lida: false
-  },
-  {
-    id: 3,
-    tipo: "cliente",
-    titulo: "Novo cliente cadastrado",
-    mensagem: "Um novo cliente foi adicionado ao sistema.",
-    horario: "Há 2 horas",
-    lida: false
-  },
-  {
-    id: 4,
-    tipo: "estoque",
-    titulo: "Reposição necessária",
-    mensagem: "O estoque de Morango Cremoso está abaixo do recomendado.",
-    horario: "Ontem",
-    lida: true
-  },
-  {
-    id: 5,
-    tipo: "venda",
-    titulo: "Venda concluída",
-    mensagem: "Uma venda foi registrada no sistema.",
-    horario: "Ontem",
-    lida: true
-  }
-];
+import {
+  listarNotificacoes,
+  marcarNotificacaoComoLida,
+  marcarTodasNotificacoesComoLidas,
+  excluirNotificacao
+} from "../services/notificacoesService";
 
 const configuracaoTipos = {
-  estoque: {
-    icone: Package,
-    classe: "notification-icon-stock",
-    etiqueta: "Estoque"
-  },
-  venda: {
-    icone: ShoppingBag,
-    classe: "notification-icon-sale",
-    etiqueta: "Venda"
-  },
-  cliente: {
-    icone: Users,
-    classe: "notification-icon-client",
-    etiqueta: "Cliente"
-  }
+  estoque: { icone: Package, classe: "notification-icon-stock", etiqueta: "Estoque" },
+  venda: { icone: ShoppingBag, classe: "notification-icon-sale", etiqueta: "Venda" },
+  cliente: { icone: Users, classe: "notification-icon-client", etiqueta: "Cliente" }
 };
 
+function normalizarNotificacao(item) {
+  const data = item.dataHora || item.createdAt || item.dataCadastro || item.data || null;
+  const tipoOriginal = String(item.tipo || item.categoria || "venda").toLowerCase();
+  const tipo = tipoOriginal.includes("estoq") ? "estoque"
+    : tipoOriginal.includes("client") ? "cliente" : "venda";
+  let horario = item.horario || item.tempo || "";
+  if (!horario && data) {
+    const parsed = new Date(data);
+    horario = Number.isNaN(parsed.getTime())
+      ? String(data)
+      : parsed.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+  }
+  return {
+    ...item,
+    id: item.id ?? item.uuid,
+    tipo,
+    titulo: item.titulo || item.title || "Notificação",
+    mensagem: item.mensagem || item.message || item.descricao || "",
+    horario: horario || "Data não informada",
+    lida: Boolean(item.lida ?? item.lidaEm ?? item.read ?? false)
+  };
+}
+
 export default function Notificacoes() {
-  const [notificacoes, setNotificacoes] = useState(
-    notificacoesIniciais
-  );
+  const [notificacoes, setNotificacoes] = useState([]);
   const [filtro, setFiltro] = useState("todas");
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState("");
+  const [acaoEmCurso, setAcaoEmCurso] = useState(null);
 
-  const naoLidas = notificacoes.filter(
-    (notificacao) => !notificacao.lida
-  ).length;
+  const carregar = useCallback(async () => {
+    setCarregando(true);
+    setErro("");
+    try {
+      const dados = await listarNotificacoes();
+      const lista = Array.isArray(dados) ? dados : (dados?.content || dados?.notificacoes || []);
+      setNotificacoes(lista.map(normalizarNotificacao));
+    } catch (error) {
+      setErro(error.response?.data?.message || error.response?.data?.mensagem ||
+        "Não foi possível carregar as notificações. Verifique a conexão com o servidor.");
+    } finally {
+      setCarregando(false);
+    }
+  }, []);
 
-  const notificacoesFiltradas = notificacoes.filter(
-    (notificacao) =>
-      filtro === "todas" ||
-      (filtro === "naoLidas" && !notificacao.lida)
+  useEffect(() => { carregar(); }, [carregar]);
+
+  const naoLidas = useMemo(
+    () => notificacoes.filter((n) => !n.lida).length,
+    [notificacoes]
+  );
+  const filtradas = useMemo(
+    () => notificacoes.filter((n) => filtro === "todas" || !n.lida),
+    [notificacoes, filtro]
   );
 
-  function marcarComoLida(id) {
-    setNotificacoes((atuais) =>
-      atuais.map((notificacao) =>
-        notificacao.id === id
-          ? { ...notificacao, lida: true }
-          : notificacao
-      )
-    );
+  async function marcarComoLida(id) {
+    setAcaoEmCurso(id);
+    setErro("");
+    try {
+      await marcarNotificacaoComoLida(id);
+      setNotificacoes((atuais) => atuais.map((n) => n.id === id ? { ...n, lida: true } : n));
+    } catch (error) {
+      setErro(error.response?.data?.message || "Não foi possível atualizar a notificação.");
+    } finally { setAcaoEmCurso(null); }
   }
 
-  function marcarTodasComoLidas() {
-    setNotificacoes((atuais) =>
-      atuais.map((notificacao) => ({
-        ...notificacao,
-        lida: true
-      }))
-    );
+  async function marcarTodasComoLidas() {
+    setAcaoEmCurso("todas");
+    setErro("");
+    try {
+      await marcarTodasNotificacoesComoLidas();
+      setNotificacoes((atuais) => atuais.map((n) => ({ ...n, lida: true })));
+    } catch (error) {
+      setErro(error.response?.data?.message || "Não foi possível atualizar as notificações.");
+    } finally { setAcaoEmCurso(null); }
   }
 
-  function excluirNotificacao(id) {
-    setNotificacoes((atuais) =>
-      atuais.filter((notificacao) => notificacao.id !== id)
-    );
+  async function remover(id) {
+    setAcaoEmCurso(id);
+    setErro("");
+    try {
+      await excluirNotificacao(id);
+      setNotificacoes((atuais) => atuais.filter((n) => n.id !== id));
+    } catch (error) {
+      setErro(error.response?.data?.message || "Não foi possível excluir a notificação.");
+    } finally { setAcaoEmCurso(null); }
   }
 
   return (
     <div className="notifications-page">
       <div className="notifications-heading">
         <div>
-          <span className="notifications-eyebrow">
-            <Sparkles size={15} /> FIQUE POR DENTRO
-          </span>
+          <span className="notifications-eyebrow"><Sparkles size={15} /> FIQUE POR DENTRO</span>
           <h1>Notificações</h1>
           <p>Acompanhe os avisos e novidades da sua sorveteria.</p>
         </div>
-
         <div className="notifications-heading-icon">
           <Bell size={28} />
-          {naoLidas > 0 && (
-            <span>{naoLidas}</span>
-          )}
+          {naoLidas > 0 && <span>{naoLidas}</span>}
         </div>
       </div>
 
       <div className="notification-summary">
-        <div className="notification-summary-icon">
-          <Bell size={22} />
-        </div>
+        <div className="notification-summary-icon"><Bell size={22} /></div>
         <div>
           <strong>{naoLidas} notificações não lidas</strong>
           <p>Você está atualizado com as atividades da loja.</p>
@@ -147,93 +131,60 @@ export default function Notificacoes() {
       <section className="notifications-panel">
         <div className="notifications-toolbar">
           <div className="notification-filters">
-            <button
-              className={filtro === "todas" ? "selected" : ""}
-              onClick={() => setFiltro("todas")}
-            >
-              Todas
+            <button className={filtro === "todas" ? "selected" : ""} onClick={() => setFiltro("todas")}>Todas</button>
+            <button className={filtro === "naoLidas" ? "selected" : ""} onClick={() => setFiltro("naoLidas")}>Não lidas ({naoLidas})</button>
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button className="mark-all-button" onClick={carregar} disabled={carregando}>
+              <RefreshCw size={16} /> Atualizar
             </button>
-
-            <button
-              className={filtro === "naoLidas" ? "selected" : ""}
-              onClick={() => setFiltro("naoLidas")}
-            >
-              Não lidas ({naoLidas})
+            <button className="mark-all-button" onClick={marcarTodasComoLidas} disabled={naoLidas === 0 || acaoEmCurso !== null}>
+              <CheckCheck size={17} /> Marcar todas como lidas
             </button>
           </div>
-
-          <button
-            className="mark-all-button"
-            onClick={marcarTodasComoLidas}
-            disabled={naoLidas === 0}
-          >
-            <CheckCheck size={17} />
-            Marcar todas como lidas
-          </button>
         </div>
 
+        {erro && <p role="alert" className="notification-api-error">{erro}</p>}
         <div className="notification-list">
-          <AnimatePresence mode="popLayout">
-            {notificacoesFiltradas.map((notificacao) => {
-              const tipo = configuracaoTipos[notificacao.tipo];
-              const Icone = tipo.icone;
-
-              return (
-                <motion.article
-                  layout
-                  key={notificacao.id}
-                  className={`notification-item ${
-                    !notificacao.lida ? "unread" : ""
-                  }`}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, x: 30 }}
-                >
-                  <div className={`notification-item-icon ${tipo.classe}`}>
-                    <Icone size={21} />
-                  </div>
-
-                  <div className="notification-content">
-                    <div className="notification-title-row">
-                      <strong>{notificacao.titulo}</strong>
+          {carregando ? (
+            <div className="notifications-empty">Carregando notificações...</div>
+          ) : (
+            <AnimatePresence mode="popLayout">
+              {filtradas.map((notificacao) => {
+                const tipo = configuracaoTipos[notificacao.tipo] || configuracaoTipos.venda;
+                const Icone = tipo.icone;
+                return (
+                  <motion.article layout key={notificacao.id}
+                    className={`notification-item ${!notificacao.lida ? "unread" : ""}`}
+                    initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, x: 30 }}>
+                    <div className={`notification-item-icon ${tipo.classe}`}><Icone size={21} /></div>
+                    <div className="notification-content">
+                      <div className="notification-title-row">
+                        <strong>{notificacao.titulo}</strong>
+                        {!notificacao.lida && <span className="notification-unread-dot" />}
+                      </div>
+                      <p>{notificacao.mensagem}</p>
+                      <div className="notification-meta"><span>{tipo.etiqueta}</span><span>{notificacao.horario}</span></div>
+                    </div>
+                    <div className="notification-actions">
                       {!notificacao.lida && (
-                        <span className="notification-unread-dot" />
+                        <button title="Marcar como lida" aria-label="Marcar como lida"
+                          disabled={acaoEmCurso !== null} onClick={() => marcarComoLida(notificacao.id)}>
+                          <Check size={18} />
+                        </button>
                       )}
-                    </div>
-
-                    <p>{notificacao.mensagem}</p>
-
-                    <div className="notification-meta">
-                      <span>{tipo.etiqueta}</span>
-                      <span>{notificacao.horario}</span>
-                    </div>
-                  </div>
-
-                  <div className="notification-actions">
-                    {!notificacao.lida && (
-                      <button
-                        title="Marcar como lida"
-                        aria-label="Marcar como lida"
-                        onClick={() => marcarComoLida(notificacao.id)}
-                      >
-                        <Check size={18} />
+                      <button title="Excluir notificação" aria-label="Excluir notificação"
+                        disabled={acaoEmCurso !== null} onClick={() => remover(notificacao.id)}>
+                        <Trash2 size={18} />
                       </button>
-                    )}
-
-                    <button
-                      title="Excluir notificação"
-                      aria-label="Excluir notificação"
-                      onClick={() => excluirNotificacao(notificacao.id)}
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
-                </motion.article>
-              );
-            })}
-          </AnimatePresence>
-
-          {notificacoesFiltradas.length === 0 && (
+                    </div>
+                  </motion.article>
+                );
+              })}
+            </AnimatePresence>
+          )}
+          {!carregando && filtradas.length === 0 && (
             <div className="notifications-empty">
               <div><Bell size={30} /></div>
               <strong>Nenhuma notificação por aqui!</strong>
