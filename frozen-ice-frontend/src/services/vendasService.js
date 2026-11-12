@@ -1,20 +1,29 @@
+import api from "./api";
 
-const CHAVE_VENDAS = "frozen_ice_vendas";
-
-export function listarVendas() {
-  try {
-    return JSON.parse(localStorage.getItem(CHAVE_VENDAS)) || [];
-  } catch {
-    return [];
-  }
+function extrairLista(data) {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.content)) return data.content;
+  if (Array.isArray(data?.dados)) return data.dados;
+  if (Array.isArray(data?.data)) return data.data;
+  return [];
 }
 
-export function salvarVenda(venda) {
-  const vendas = listarVendas();
+export async function listarProdutosParaVenda() {
+  const { data } = await api.get("/api/produtos");
+  return extrairLista(data);
+}
 
-  const novasVendas = [venda, ...vendas];
+export async function listarClientesParaVenda() {
+  const { data } = await api.get("/api/clientes");
+  return extrairLista(data);
+}
 
-  localStorage.setItem(CHAVE_VENDAS, JSON.stringify(novasVendas));
+export async function registrarVenda(payload) {
+  const { data } = await api.post("/api/vendas", payload);
+  return data;
+}
 
-  return venda;
+export async function listarVendas() {
+  const { data } = await api.get("/api/vendas");
+  return extrairLista(data);
 }
