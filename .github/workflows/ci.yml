@@ -75,6 +75,14 @@ jobs:
 
       - name: Verify artifact
         run: test -n "$(find target -maxdepth 1 -name '*.jar' -print -quit)"
+      
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-reports
+          path: frozen-ice-backend/target/surefire-reports/
+          if-no-files-found: warn
 
   ci-status:
     name: CI Status
